@@ -241,9 +241,9 @@
 #define configUSE_Debug_Log_Print               1
 
 #if configUSE_STDIO_PRINTF
-    #define configUSE_PRINTF_UART0              0
+    #define configUSE_PRINTF_UART0              1
     #define configUSE_PRINTF_RTT                0
-    #define configUSE_PRINTF_SWO                1
+    #define configUSE_PRINTF_SWO                0
 
     #define am_app_printf(...)                  am_app_utils_stdio_printf(__VA_ARGS__)
 
