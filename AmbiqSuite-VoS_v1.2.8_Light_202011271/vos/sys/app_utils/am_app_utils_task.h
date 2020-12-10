@@ -40,6 +40,7 @@ typedef struct
 typedef enum
 {
     AM_APP_TASK_NONE = 0, // The enum must begin with this value as named.
+    AM_APP_TASK_UART,
     AM_APP_TASK_LED,
 
 #if configUSE_LOG_UART0 || configUSE_PRINTF_UART0

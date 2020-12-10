@@ -53,6 +53,9 @@
 #include "am_bsp.h"
 #include "am_util.h"
 
+#include "FreeRTOS.h"
+#include "task.h"
+
 
 //#define FLOW_CTRL
 #define TEMP_BUFF_SIZE 40
@@ -170,35 +173,13 @@ uint16_t uart_buff_receive(uint16_t size, uint8_t *data, uint32_t timeout)
 }
 
 
-//*****************************************************************************
-//
-// Main
-//
-//*****************************************************************************
-int
-main(void)
+void uart_task(void *pvParameters)
 {
 	uint32_t ui32NumBytesRead;
 	uint8_t ui8inData[TEMP_BUFF_SIZE];
 	const uint8_t ui8outData='$';
 
 	am_hal_gpio_pincfg_t pincfg = {0};
-
-    //
-    // Set the clock frequency.
-    //
-    am_hal_clkgen_control(AM_HAL_CLKGEN_CONTROL_SYSCLK_MAX, 0);
-
-    //
-    // Set the default cache configuration
-    //
-    am_hal_cachectrl_config(&am_hal_cachectrl_defaults);
-    am_hal_cachectrl_enable();
-
-    //
-    // Configure the board for low power operation.
-    //
-    am_bsp_low_power_init();
 
     //
     // Initialize the printf interface for UART output.
@@ -230,18 +211,6 @@ main(void)
 	am_hal_uart_interrupt_enable(phUART, (AM_HAL_UART_INT_RX | AM_HAL_UART_INT_TX | AM_HAL_UART_INT_RX_TMOUT | AM_HAL_UART_INT_TXCMP));
     am_hal_interrupt_master_enable();
 
-	//
-    // Initialize the printf interface for ITM output
-    //
-    am_bsp_itm_printf_enable();
-
-    //
-    // Print the banner.
-    //
-    am_util_stdio_terminal_clear();
-    am_util_stdio_printf("UART Buffer\n\n");
-
-
 	uart_buff_send(1, (const uint8_t *)&ui8outData, AM_HAL_UART_WAIT_FOREVER);
 
 
@@ -259,12 +228,8 @@ main(void)
 			for(int i=0; i < ui32NumBytesRead; i++)
 				am_util_stdio_printf("%c ",ui8inData[i]);
 			am_util_stdio_printf("\n");
-			am_util_delay_ms(500);
+			vTaskDelay(1000);
 			uart_buff_send(ui32NumBytesRead, ui8inData, AM_HAL_UART_WAIT_FOREVER);
 		}
-		//
-        // Go to Deep Sleep.
-        //
-        am_hal_sysctrl_sleep(AM_HAL_SYSCTRL_SLEEP_DEEP);
     }
 }

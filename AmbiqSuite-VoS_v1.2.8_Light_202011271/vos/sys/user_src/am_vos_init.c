@@ -142,6 +142,7 @@ VosSysInfo g_sVosSys =
 static const am_app_utils_task_setup_t g_KWD_TaskSetup[] = 
 {
     // TASK ID,                     Task function pointer,              Task name string,           Stack,  Cback,  Priority,   Queue size
+    {AM_APP_TASK_UART,               &uart_task,               		"uart",                  256,    NULL,   2,          4},
     {AM_APP_TASK_LED,               &am_vos_led_task,               "key&led",                  256,    NULL,   2,          4},
 
 #if configUSE_LOG_UART0 || configUSE_PRINTF_UART0

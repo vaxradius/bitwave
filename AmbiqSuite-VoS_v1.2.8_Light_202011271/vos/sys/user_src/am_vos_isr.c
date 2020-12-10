@@ -477,7 +477,7 @@ am_uart_isr(void)
 }
 #endif // AM_PART_APOLLO2
 
-#if defined (AM_PART_APOLLO3) || defined (AM_PART_APOLLO3P)
+#if 0 // refer to uart_task.c
 void
 am_uart_isr(void)
 {

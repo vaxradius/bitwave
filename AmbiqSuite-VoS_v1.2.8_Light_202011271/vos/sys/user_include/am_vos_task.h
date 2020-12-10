@@ -91,6 +91,8 @@ extern void am_app_itm_printf_enable(void);
 
 extern void am_vos_setup_task(void *pvParameters);
 
+extern void uart_task(void *pvParameters);
+
 extern void am_vos_led_task(void *pvParameters);
 
 extern void am_vos_rtt_switch_task(void *pvParameters);
