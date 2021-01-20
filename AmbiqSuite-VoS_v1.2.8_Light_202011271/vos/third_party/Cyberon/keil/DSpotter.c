@@ -196,7 +196,7 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		
 		if(nStatus == 1)
 		{
-				if((nTimeout += i16InputLength) > (16000 << 3))
+				if((nTimeout += i16InputLength) > (16000 << 2))
 				{
 						AM_APP_LOG_INFO("[Wakeword detection]\r\n");
 						nStatus = 0;
