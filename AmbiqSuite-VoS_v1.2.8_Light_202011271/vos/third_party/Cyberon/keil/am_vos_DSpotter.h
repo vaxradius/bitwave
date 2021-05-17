@@ -44,11 +44,14 @@
 #ifndef AM_APP_KWD_DSpotter_H
 #define AM_APP_KWD_DSpotter_H
 
-#define MODEL_NUM	6
+#define MODEL_NUM					(6)
 
-#define k_nMaxTime					(500)
+#define k_nMaxTime				(500)
 
-#define ENABLE_AGC 0
+#define ENABLE_AGC 				(0)
+
+#define SEAMLESS_MODE			(1)
+#define RING_BUFFER_SIZE	(3200) //0.2s samples
 
 extern void *g_hDSpotter;
 

@@ -12,6 +12,8 @@
 #include "DSpotterSDKApi.h"
 #include "am_vos_DSpotter.h"
 
+SHORT *g_lpsRingBuffer = NULL;
+INT g_nRingBufferIndex = 0;
 void *g_hDSpotter = NULL;
 BYTE *g_lpbyMemPool = NULL;
 INT g_nMemUsage;
@@ -42,7 +44,16 @@ void *DSpotterInit(void)
 	HANDLE hDSpotter = NULL;
 	INT nMemUsage, nErr;
 	/** Initialize VR engine */
+#if SEAMLESS_MODE
+	//Allocate ring buffer
+	if(RING_BUFFER_SIZE * sizeof(SHORT) > xPortGetFreeHeapSize()){
+		am_app_utils_stdio_printf(2, "Need more memory, memory usage = %d available memory = %d\r\n", RING_BUFFER_SIZE * sizeof(SHORT), xPortGetFreeHeapSize());
+		return NULL;
+	}
 	
+	g_nRingBufferIndex = 0;
+	g_lpsRingBuffer = pvPortMalloc(RING_BUFFER_SIZE * sizeof(SHORT));
+#endif
 	// Unpack command data
 	if(UnpackBin((BYTE *)&u32CMDDataBegin, g_lppbyModel, MODEL_NUM) < MODEL_NUM) {
 		am_app_utils_stdio_printf(2, "Invalid bin\r\n");
@@ -59,7 +70,6 @@ void *DSpotterInit(void)
 	nMemUsage = DSpotter_GetMemoryUsage_Multi(g_lppbyModel[0], (BYTE **)&g_lppbyModel[2], 1, k_nMaxTime);
 
 	if(nMemUsage > xPortGetFreeHeapSize()){
-
 		am_app_utils_stdio_printf(2, "Need more memory, memory usage = %d available memory = %d\r\n", nMemUsage, xPortGetFreeHeapSize());
 		return NULL;
 	}
@@ -104,6 +114,9 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		static INT nStatus = 0;
 		static INT nQuota = 200;
 		static BOOL bQuotaRanOut = FALSE;
+#if SEAMLESS_MODE
+		INT nLength;
+#endif
 	
 		if(nQuota < 0)
 		{
@@ -117,6 +130,22 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		}
 	
 //		AM_APP_LOG_INFO("[AM-VoS] i16InputLength = %d\n", i16InputLength);
+#if SEAMLESS_MODE
+		if((g_nRingBufferIndex + i16InputLength) <= RING_BUFFER_SIZE)
+		{
+			memcpy(&g_lpsRingBuffer[g_nRingBufferIndex], pi16InputBuffer, sizeof(SHORT) * i16InputLength);
+			g_nRingBufferIndex += i16InputLength;
+			if(g_nRingBufferIndex == RING_BUFFER_SIZE)
+				g_nRingBufferIndex = 0;
+		}
+		else
+		{
+			nLength = RING_BUFFER_SIZE - g_nRingBufferIndex;
+			memcpy(&g_lpsRingBuffer[g_nRingBufferIndex], pi16InputBuffer, sizeof(SHORT) * nLength);
+			memcpy(&g_lpsRingBuffer[0], &pi16InputBuffer[nLength], sizeof(SHORT) * (i16InputLength - nLength));
+			g_nRingBufferIndex = i16InputLength - nLength;
+		}
+#endif
 		int32_t result = DSpotter_AddSample(g_hDSpotter, (short *)pi16InputBuffer, i16InputLength);
 		if(result == 0)
 		{
@@ -144,6 +173,17 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 						{
 							am_app_utils_stdio_printf(2, "Fail to enable AGC\r\n");
 							return;
+						}
+#endif
+#if SEAMLESS_MODE
+						if(g_nRingBufferIndex == 0)
+						{
+							DSpotter_AddSample(g_hDSpotter, g_lpsRingBuffer, RING_BUFFER_SIZE);
+						}
+						else
+						{
+							DSpotter_AddSample(g_hDSpotter, &g_lpsRingBuffer[g_nRingBufferIndex], (RING_BUFFER_SIZE - g_nRingBufferIndex));
+							DSpotter_AddSample(g_hDSpotter, &g_lpsRingBuffer[0], g_nRingBufferIndex);
 						}
 #endif
 				}

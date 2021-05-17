@@ -372,7 +372,8 @@ void am_pdm0_isr(void)
             am_app_utils_task_send_fromISR(AM_APP_ISR_PDM, AM_APP_TASK_AUD_PROCESSING, AM_APP_MESSAGE_LONG, SAMPLE_32BIT*PCM_FRAME_SIZE, &(g_sAmUtil.sRingBuf[AM_AUDIO_BUFFER_STEREO]));
         }
 #else // configUSE_WOS
-        am_audio_buffer_push(AM_AUDIO_BUFFER_STEREO, g_sVosSys.ui32PDMDataBuf, PCM_FRAME_SIZE * SAMPLE_32BIT);
+        bool overwrite = am_audio_buffer_push(AM_AUDIO_BUFFER_STEREO, g_sVosSys.ui32PDMDataBuf, PCM_FRAME_SIZE * SAMPLE_32BIT);
+        if(overwrite) AM_APP_LOG_DEBUG("overwrite audio buffer!\n");
         am_app_utils_task_send_fromISR(AM_APP_ISR_PDM, AM_APP_TASK_AUD_PROCESSING, AM_APP_MESSAGE_LONG, SAMPLE_32BIT*PCM_FRAME_SIZE, &(g_sAmUtil.sRingBuf[AM_AUDIO_BUFFER_STEREO]));
 #endif // configUSE_WOS
 
