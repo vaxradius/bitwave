@@ -131,19 +131,22 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 	
 //		AM_APP_LOG_INFO("[AM-VoS] i16InputLength = %d\n", i16InputLength);
 #if SEAMLESS_MODE
-		if((g_nRingBufferIndex + i16InputLength) <= RING_BUFFER_SIZE)
+		if(nStatus == 0)
 		{
-			memcpy(&g_lpsRingBuffer[g_nRingBufferIndex], pi16InputBuffer, sizeof(SHORT) * i16InputLength);
-			g_nRingBufferIndex += i16InputLength;
-			if(g_nRingBufferIndex == RING_BUFFER_SIZE)
-				g_nRingBufferIndex = 0;
-		}
-		else
-		{
-			nLength = RING_BUFFER_SIZE - g_nRingBufferIndex;
-			memcpy(&g_lpsRingBuffer[g_nRingBufferIndex], pi16InputBuffer, sizeof(SHORT) * nLength);
-			memcpy(&g_lpsRingBuffer[0], &pi16InputBuffer[nLength], sizeof(SHORT) * (i16InputLength - nLength));
-			g_nRingBufferIndex = i16InputLength - nLength;
+				if((g_nRingBufferIndex + i16InputLength) <= RING_BUFFER_SIZE)
+				{
+					memcpy(&g_lpsRingBuffer[g_nRingBufferIndex], pi16InputBuffer, sizeof(SHORT) * i16InputLength);
+					g_nRingBufferIndex += i16InputLength;
+					if(g_nRingBufferIndex == RING_BUFFER_SIZE)
+						g_nRingBufferIndex = 0;
+				}
+				else
+				{
+					nLength = RING_BUFFER_SIZE - g_nRingBufferIndex;
+					memcpy(&g_lpsRingBuffer[g_nRingBufferIndex], pi16InputBuffer, sizeof(SHORT) * nLength);
+					memcpy(&g_lpsRingBuffer[0], &pi16InputBuffer[nLength], sizeof(SHORT) * (i16InputLength - nLength));
+					g_nRingBufferIndex = i16InputLength - nLength;
+				}
 		}
 #endif
 		int32_t result = DSpotter_AddSample(g_hDSpotter, (short *)pi16InputBuffer, i16InputLength);

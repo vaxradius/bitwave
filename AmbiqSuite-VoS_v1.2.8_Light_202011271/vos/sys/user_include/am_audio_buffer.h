@@ -34,7 +34,7 @@ typedef struct{
 #elif configUSE_RetuneDSP_VS
 #define BYTES_UNIVERSAL_BUFFER_SIZE (16 * 1024)
 #elif configUSE_Cyberon_Spotter
-#define BYTES_UNIVERSAL_BUFFER_SIZE (32 * 1024) //For seamless mode
+#define BYTES_UNIVERSAL_BUFFER_SIZE (6 * 1024) //For seamless mode
 #else
 #define BYTES_UNIVERSAL_BUFFER_SIZE (6 * 1024)    // 4KB for mSBC, 6KB for OPUS as a minimal buffer size.
 #endif // (configUSE_Sensory_THF || configUSE_RetuneDSP_VS) && configUSE_PREROLL, configUSE_RetuneDSP_VS
