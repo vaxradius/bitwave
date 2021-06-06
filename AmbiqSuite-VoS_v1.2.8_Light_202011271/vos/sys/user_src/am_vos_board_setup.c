@@ -1261,7 +1261,7 @@ void am_vos_burst_mode_enable(void)
     {
         if (AM_HAL_BURST_MODE == g_sVosSys.eBurstMode)
         {
-            AM_APP_LOG_DEBUG("\n[AM-VoS] Burst Mode (96MHz)\n\n");
+//            AM_APP_LOG_DEBUG("\n[AM-VoS] Burst Mode (96MHz)\n\n");
         }
     }
     else
@@ -1282,7 +1282,7 @@ void am_vos_burst_mode_disable(void)
     {
         if (AM_HAL_NORMAL_MODE == g_sVosSys.eBurstMode)
         {
-            AM_APP_LOG_DEBUG("\n[AM-VoS] Normal Mode (48MHz)\n\n");
+//            AM_APP_LOG_DEBUG("\n[AM-VoS] Normal Mode (48MHz)\n\n");
         }
     }
     else

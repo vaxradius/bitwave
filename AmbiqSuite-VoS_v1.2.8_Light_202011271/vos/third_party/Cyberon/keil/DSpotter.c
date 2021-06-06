@@ -179,6 +179,9 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 						}
 #endif
 #if SEAMLESS_MODE
+						#if BURST_MODE
+						am_vos_burst_mode_enable();
+						#endif
 						if(g_nRingBufferIndex == 0)
 						{
 							DSpotter_AddSample(g_hDSpotter, g_lpsRingBuffer, RING_BUFFER_SIZE);
@@ -188,6 +191,9 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 							DSpotter_AddSample(g_hDSpotter, &g_lpsRingBuffer[g_nRingBufferIndex], (RING_BUFFER_SIZE - g_nRingBufferIndex));
 							DSpotter_AddSample(g_hDSpotter, &g_lpsRingBuffer[0], g_nRingBufferIndex);
 						}
+						#if BURST_MODE
+						am_vos_burst_mode_disable();
+						#endif
 #endif
 				}
 				else if(nStatus == 1)

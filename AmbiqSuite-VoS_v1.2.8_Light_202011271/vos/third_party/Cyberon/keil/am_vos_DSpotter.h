@@ -51,7 +51,12 @@
 #define ENABLE_AGC 				(0)
 
 #define SEAMLESS_MODE			(1)
+#define BURST_MODE				(1)
+#if BURST_MODE
+#define RING_BUFFER_SIZE	(2240) //0.14s samples
+#else
 #define RING_BUFFER_SIZE	(1280) //0.08s samples
+#endif
 
 extern void *g_hDSpotter;
 
