@@ -217,7 +217,7 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 						else if(id == 17) { AM_APP_LOG_INFO("Enable conference\r\n"); }
 						else if(id == 18) { AM_APP_LOG_INFO("Disable conference\r\n"); }
 						else if(id == 19) { AM_APP_LOG_INFO("Start recording\r\n"); }
-						else if(id == 20) { AM_APP_LOG_INFO("Stop recording\r\n"); }
+						else if(id == 20) { AM_APP_LOG_INFO("End recording\r\n"); }
 						AM_APP_LOG_INFO("[Wakeword detection]\r\n");
 						nQuota--;
 						nStatus = 0;

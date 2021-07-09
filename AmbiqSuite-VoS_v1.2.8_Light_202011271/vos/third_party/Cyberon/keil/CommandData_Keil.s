@@ -5,7 +5,7 @@
     EXPORT  u32CMDDataEnd
 
 u32CMDDataBegin
-	INCBIN .\UCLEAR_EngCmd_20210706_pack_WithMapID.bin
+	INCBIN .\UCLEAR_EngCmd_20210709_pack_WithMapID.bin
 u32CMDDataEnd
 
 	END
