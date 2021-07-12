@@ -58,6 +58,8 @@
 #define RING_BUFFER_SIZE	(1280) //0.08s samples
 #endif
 
+#define SEPARATION_MODE		(1)
+
 extern void *g_hDSpotter;
 
 //*****************************************************************************

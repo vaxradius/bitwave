@@ -21,6 +21,10 @@ BYTE *g_lppbyModel[MODEL_NUM] = {0};
 BYTE *g_lppbyMapID[MODEL_NUM - 2] = {0};
 extern uint32_t u32CMDDataBegin;
 extern uint32_t u32LicenseDataBegin;
+#if SEPARATION_MODE
+BYTE *g_lppbyModel2[MODEL_NUM] = {0};
+extern uint32_t u32CMDDataBegin2;
+#endif
 
 INT UnpackBin(BYTE lpbyBin[], BYTE *lppbyModel[], INT nMaxNumModel)
 {
@@ -59,16 +63,31 @@ void *DSpotterInit(void)
 		am_app_utils_stdio_printf(2, "Invalid bin\r\n");
 		return NULL;
 	}
+#if SEPARATION_MODE
+	// Unpack command data
+	if(UnpackBin((BYTE *)&u32CMDDataBegin2, g_lppbyModel2, MODEL_NUM) < MODEL_NUM) {
+		am_app_utils_stdio_printf(2, "Invalid bin\r\n");
+		return NULL;
+	}
 	
+	// Unpack map id
+	if(UnpackBin(g_lppbyModel2[5], g_lppbyMapID, MODEL_NUM - 2) < MODEL_NUM - 2) {
+		am_app_utils_stdio_printf(2, "Invalid bin\r\n");
+		return NULL;
+	}
+	
+	// Check the memory usage
+	nMemUsage = DSpotter_GetMemoryUsage_Multi(g_lppbyModel2[0], (BYTE **)&g_lppbyModel2[2], 1, k_nMaxTime);
+#else
 	// Unpack map id
 	if(UnpackBin(g_lppbyModel[5], g_lppbyMapID, MODEL_NUM - 2) < MODEL_NUM - 2) {
 		am_app_utils_stdio_printf(2, "Invalid bin\r\n");
 		return NULL;
 	}
-
+	
 	// Check the memory usage
 	nMemUsage = DSpotter_GetMemoryUsage_Multi(g_lppbyModel[0], (BYTE **)&g_lppbyModel[2], 1, k_nMaxTime);
-
+#endif
 	if(nMemUsage > xPortGetFreeHeapSize()){
 		am_app_utils_stdio_printf(2, "Need more memory, memory usage = %d available memory = %d\r\n", nMemUsage, xPortGetFreeHeapSize());
 		return NULL;
@@ -160,13 +179,16 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 						nQuota--;
 						nStatus = 1;
 						nTimeout = 0;
-					
+#if SEPARATION_MODE
+						g_hDSpotter = DSpotter_Init_Multi(g_lppbyModel2[0], (BYTE **)&g_lppbyModel2[2], 1, k_nMaxTime, g_lpbyMemPool, g_nMemUsage, NULL, 0, &nErr, (BYTE *)&u32LicenseDataBegin);
+#else
 						g_hDSpotter = DSpotter_Init_Multi(g_lppbyModel[0], (BYTE **)&g_lppbyModel[2], 1, k_nMaxTime, g_lpbyMemPool, g_nMemUsage, NULL, 0, &nErr, (BYTE *)&u32LicenseDataBegin);
+#endif					
 						if(g_hDSpotter == NULL){
 							am_app_utils_stdio_printf(2, "g_hDSpotter == NULL\r\n");
 							return;
 						}
-						
+
 						if((nErr = DSpotter_SetResultMapID_Multi(g_hDSpotter, (BYTE **)&g_lppbyMapID[1], 1)) != DSPOTTER_SUCCESS){
 							am_app_utils_stdio_printf(2, "Fail to set map id\r\n");
 							return;
