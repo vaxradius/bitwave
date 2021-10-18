@@ -131,22 +131,9 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		INT nErr;
 		static INT nTimeout = 0;
 		static INT nStatus = 0;
-		static INT nQuota = 200;
-		static BOOL bQuotaRanOut = FALSE;
 #if SEAMLESS_MODE
 		INT nLength;
 #endif
-	
-		if(nQuota < 0)
-		{
-			if(!bQuotaRanOut)
-			{
-				bQuotaRanOut = TRUE;
-				am_app_utils_stdio_printf(2, "Quota ran out\r\n");
-			}
-			
-			return;
-		}
 	
 //		AM_APP_LOG_INFO("[AM-VoS] i16InputLength = %d\n", i16InputLength);
 #if SEAMLESS_MODE
@@ -176,7 +163,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 				{
 						AM_APP_LOG_INFO("Hello UCLEAR\r\n");
 						AM_APP_LOG_INFO("[Command detection]\r\n");
-						nQuota--;
 						nStatus = 1;
 						nTimeout = 0;
 #if SEPARATION_MODE
@@ -241,7 +227,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 						else if(id == 19) { AM_APP_LOG_INFO("Start recording\r\n"); }
 						else if(id == 20) { AM_APP_LOG_INFO("End recording\r\n"); }
 						AM_APP_LOG_INFO("[Wakeword detection]\r\n");
-						nQuota--;
 						nStatus = 0;
 					
 						g_hDSpotter = DSpotter_Init_Multi(g_lppbyModel[0], (BYTE **)&g_lppbyModel[1], 1, k_nMaxTime, g_lpbyMemPool, g_nMemUsage, NULL, 0, &nErr, (BYTE *)&u32LicenseDataBegin);
