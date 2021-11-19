@@ -22,9 +22,151 @@ INT g_nDataBufSize;
 BYTE *g_lpbyModelBuf = NULL;
 INT g_nModelBufSize;
 BYTE *g_lppbyModel[MODEL_NUM] = {0};
-SHORT g_lpsMapID[160 + 2 + 3 * MAX_UTTERANCE] = {0};
+SHORT g_lpsMapID[MAP_ID_FILE_SIZE] = {0};
 extern uint32_t u32CMDDataBegin;
 extern uint32_t u32LicenseDataBegin;
+uint32_t g_ui32PrgmAddr = (AM_HAL_FLASH_INSTANCE_SIZE + (2 * AM_HAL_FLASH_PAGE_SIZE));
+volatile BOOL g_bTrainSDModel = TRUE;
+volatile BOOL g_bProcessButtonEvent = FALSE;
+SHORT g_sTargetID = 0;
+
+BOOL ProgramDataToFlash(INT nModelSize)
+{
+	INT nErr;
+	BOOL bErrorOccurred = FALSE;
+	
+	do
+	{
+		nErr = am_hal_flash_mass_erase(AM_HAL_FLASH_PROGRAM_KEY, 1);
+		if(nErr)
+		{
+				AM_APP_LOG_WARNING("am_hal_flash_mass_erase Fail!!(%d)\n", nErr);
+				bErrorOccurred = TRUE;
+				break;
+		}
+		
+		if(nModelSize <= 0)
+			break;
+
+		nErr = am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY, (uint32_t *)g_lpsMapID, (uint32_t *)g_ui32PrgmAddr, MAP_ID_FILE_SIZE >> 1);
+		if(nErr)
+		{
+				AM_APP_LOG_WARNING("am_hal_flash_program_main Fail!!(%d)\n", nErr);
+				bErrorOccurred = TRUE;
+				break;
+		}
+
+		nErr = am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY, (uint32_t *)g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + (MAP_ID_FILE_SIZE >> 1), nModelSize >> 2);
+		if(nErr)
+		{
+				AM_APP_LOG_WARNING("am_hal_flash_program_main Fail!!(%d)\n", nErr);
+				bErrorOccurred = TRUE;
+				break;
+		}
+
+		if(memcmp(g_lpsMapID, (uint32_t *)g_ui32PrgmAddr, MAP_ID_FILE_SIZE << 1) != 0)
+		{
+				AM_APP_LOG_WARNING("memcmp Fail!!\n");
+				bErrorOccurred = TRUE;
+				break;
+		}
+
+		if(memcmp(g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + (MAP_ID_FILE_SIZE >> 1), nModelSize) != 0)
+		{
+				AM_APP_LOG_WARNING("memcmp Fail!!\n");
+				bErrorOccurred = TRUE;
+				break;
+		}
+	} while(0);
+	
+	if(bErrorOccurred)
+	{
+		am_hal_flash_mass_erase(AM_HAL_FLASH_PROGRAM_KEY, 1);
+	}
+	
+	return !bErrorOccurred;
+}
+
+BOOL ProcessButtonEvent()
+{
+	SHORT *psPtr;
+	INT nNumCommand, i;
+	INT nErr;
+	INT nUsedSize;
+
+	psPtr = g_lpsMapID;
+	psPtr += 160;
+	nNumCommand = *((INT *)psPtr);
+	psPtr += 2;
+	for(i = 0; i < nNumCommand; i++)
+	{
+		if(psPtr[i] == g_sTargetID)
+			break;
+	}
+	
+	if(i < nNumCommand)
+	{
+		if(nNumCommand == MAX_UTTERANCE * 6 && i == 0)
+		{
+			for(int j = i, k = i + MAX_UTTERANCE * 3; k < nNumCommand; j++, k++)
+			{
+				psPtr[j] = psPtr[k];
+			}
+		}
+		else if(nNumCommand == MAX_UTTERANCE * 9 && i == 0)
+		{
+			for(int j = i, k = i + MAX_UTTERANCE * 3; k < nNumCommand; j++, k++)
+			{
+				psPtr[j] = psPtr[k];
+			}
+		}
+		else if(nNumCommand == MAX_UTTERANCE * 9 && i == MAX_UTTERANCE * 3)
+		{
+			for(int j = i, k = i + MAX_UTTERANCE * 3; k < nNumCommand; j++, k++)
+			{
+				psPtr[j] = psPtr[k];
+			}
+		}
+		
+		psPtr = g_lpsMapID + 160;
+		*((INT *)psPtr) = nNumCommand - MAX_UTTERANCE * 3;
+		
+		g_hDSpotter = DSpotterSD_Init(g_lppbyModel[0], g_lppbyModel[MODEL_NUM - 2], g_lpbyMemPool, g_nMemUsage, &nErr);
+		if(g_hDSpotter == NULL){
+			AM_APP_LOG_WARNING("DSpotterSD_Init Fail!!(%d)\n", nErr);
+			return FALSE;
+		}
+		
+		for(int j = 0; j < MAX_UTTERANCE; j++)
+		{
+			nErr = DSpotterSD_DeleteWord(g_hDSpotter, (char *)g_lpbyModelBuf, i, &nUsedSize);
+			if(nErr != DSPOTTER_SUCCESS)
+			{
+				AM_APP_LOG_WARNING("DSpotterSD_DeleteWord Fail!!(%d)\n", nErr);
+				return FALSE;
+			}
+			AM_APP_LOG_INFO("Delete command index [%d], nUsedSize = %d\r\n", i, nUsedSize);
+		}
+		
+		if(!ProgramDataToFlash(nUsedSize))
+		{
+			AM_APP_LOG_WARNING("ProgramDataToFlash Fail!!\n");
+			return FALSE;
+		}
+		
+		AM_APP_LOG_INFO("Remove command successfully!!\r\n");
+	}
+	else
+	{
+		g_hDSpotter = DSpotterSD_Init(g_lppbyModel[0], g_lppbyModel[MODEL_NUM - 2], g_lpbyMemPool, g_nMemUsage, &nErr);
+		if(g_hDSpotter == NULL){
+			AM_APP_LOG_WARNING("DSpotterSD_Init Fail!!(%d)\n", nErr);
+			return FALSE;
+		}
+	}
+	
+	return TRUE;
+}
 
 INT UnpackBin(BYTE lpbyBin[], BYTE *lppbyModel[], INT nMaxNumModel)
 {
@@ -51,7 +193,7 @@ void *DSpotterInit(void)
 	
 	/** Initialize VR engine */
 	// Unpack command data
-	if(UnpackBin((BYTE *)&u32CMDDataBegin, g_lppbyModel, MODEL_NUM) < MODEL_NUM) {
+	if(UnpackBin((BYTE *)&u32CMDDataBegin, g_lppbyModel, MODEL_NUM) < MODEL_NUM){
 		am_app_utils_stdio_printf(2, "Invalid bin\r\n");
 		return NULL;
 	}
@@ -64,8 +206,8 @@ void *DSpotterInit(void)
 	}
 	g_nMemUsage = nMemUsage;
 	g_lpbyMemPool = pvPortMalloc(nMemUsage);
-
-	hDSpotter = DSpotterSD_Init(g_lppbyModel[0], g_lppbyModel[MODEL_NUM - 2], g_lpbyMemPool, nMemUsage, &nErr);
+	
+	hDSpotter = DSpotterSD_Init(g_lppbyModel[0], g_lppbyModel[MODEL_NUM - 2], g_lpbyMemPool, g_nMemUsage, &nErr);
 	if(hDSpotter == NULL){
 		am_app_utils_stdio_printf(2, "g_hDSpotter == NULL\r\n");
 		return NULL;
@@ -88,17 +230,39 @@ void *DSpotterInit(void)
 	g_nModelBufSize = nMemUsage;
 	g_lpbyModelBuf = pvPortMalloc(nMemUsage);
 	
-	// Initialize map id
-	psPtr = g_lpsMapID;
-	psPtr += 160;
-	*((INT *)psPtr) = MAX_UTTERANCE * 3;
-	psPtr += 2;
-	for(int i = 0; i < MAX_UTTERANCE * 3; i++)
+	// Try loading model from flash
+	memcpy(g_lpsMapID, (uint32_t *)g_ui32PrgmAddr, MAP_ID_FILE_SIZE << 1);
+	memcpy(g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + (MAP_ID_FILE_SIZE >> 1), k_nFlashPageSize);
+	hDSpotter = DSpotter_Init_Multi(g_lppbyModel[0], (BYTE **)&g_lpbyModelBuf, 1, k_nMaxTime, g_lpbyMemPool, g_nMemUsage, NULL, 0, &nErr, (BYTE *)&u32LicenseDataBegin);
+	if(hDSpotter)
 	{
-		if(i % 3 == 0)
-			psPtr[i] = 0x0;
-		else
-			psPtr[i] = 0xFFFF;
+		nErr = DSpotter_SetResultMapID_Sep(hDSpotter, (BYTE *)g_lpsMapID);
+		if(nErr != DSPOTTER_SUCCESS){
+				am_app_utils_stdio_printf(2, "DSpotter_SetResultMapID_Sep Fail!!(%d)\r\n", nErr);
+				return NULL;
+		}	
+		
+		am_app_utils_stdio_printf(2, "Load command model from flash, and then run command recognition flow!!\r\n");
+		g_bTrainSDModel = FALSE;
+	}
+	else
+	{
+		hDSpotter = DSpotterSD_Init(g_lppbyModel[0], g_lppbyModel[MODEL_NUM - 2], g_lpbyMemPool, g_nMemUsage, &nErr);
+		if(hDSpotter == NULL){
+			am_app_utils_stdio_printf(2, "g_hDSpotter == NULL\r\n");
+			return NULL;
+		}
+		
+		// Initialize map id
+		memset(g_lpsMapID, 0xFF, MAP_ID_FILE_SIZE << 1);
+		psPtr = g_lpsMapID;
+		psPtr += 160;
+		*((INT *)psPtr) = 0;
+		
+		// Initialize model buffer
+		memset(g_lpbyModelBuf, 0xFF, k_nFlashPageSize);
+		
+		am_app_utils_stdio_printf(2, "No command model in flash, so run command training flow!!\r\n");
 	}
 
 	return (void *)hDSpotter;
@@ -118,12 +282,13 @@ uint8_t am_vos_engine_init(void)
 
 void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 {
-		static BOOL bTrainSDModel = TRUE;
 		static BOOL bStartTraining = FALSE;
 		static BOOL bErrorOccurred = FALSE;
 		static INT nUtterance = 0;
 		INT nUsedSize;
 		INT nErr;
+		SHORT *psPtr;
+		INT nNumCommand;
 	
 //		AM_APP_LOG_INFO("[AM-VoS] i16InputLength = %d\n", i16InputLength);
 	
@@ -133,8 +298,27 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 																				AM_APP_MESSAGE_SHORT, KEY_WORD_GOT_MESSAGE, NULL);
 				return;
 		}
+		
+		if(g_bProcessButtonEvent)
+		{
+			am_vos_mic_disable();
+			bErrorOccurred = !ProcessButtonEvent();
+//			am_vos_mic_fifo_flush();
+			am_vos_mic_enable();
+			if(bErrorOccurred)
+			{
+					AM_APP_LOG_WARNING("ProcessButtonEvent Fail!!\n");
+					return;
+			}
+			
+			AM_APP_LOG_INFO("Run command training flow!!\r\n");
+			g_bTrainSDModel = TRUE;
+			g_bProcessButtonEvent = FALSE;
+			
+			return;
+		}
 	
-		if(bTrainSDModel)
+		if(g_bTrainSDModel)
 		{
 				if(!bStartTraining)
 				{
@@ -172,6 +356,7 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 				
 						am_vos_mic_disable();
 						nErr = DSpotterSD_TrainWord(g_hDSpotter, (char *)g_lpbyModelBuf, g_nModelBufSize, &nUsedSize);
+//						am_vos_mic_fifo_flush();
 						am_vos_mic_enable();
 						if(nErr != DSPOTTER_SUCCESS)
 						{
@@ -180,7 +365,7 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 								return;
 						}
 						
-//						AM_APP_LOG_INFO("nUsedSize: %d\r\n", nUsedSize);
+						AM_APP_LOG_INFO("nUsedSize: %d\r\n", nUsedSize);
 						AM_APP_LOG_INFO("Add utterance %d successfully!!\r\n", nUtterance + 1);
 						
 						for(int i = 0; i <= nUtterance; i++)
@@ -192,7 +377,28 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 						bStartTraining = FALSE;
 						if(++nUtterance >= MAX_UTTERANCE)
 						{
-								bTrainSDModel = FALSE;
+								psPtr = g_lpsMapID;
+								psPtr += 160;
+								nNumCommand = *((INT *)psPtr);
+								psPtr += 2;
+								for(int i = 0; i < MAX_UTTERANCE; i++)
+								{
+										psPtr[nNumCommand + i * 3] = g_sTargetID;
+										psPtr[nNumCommand + i * 3 + 1] = 0xFF;
+										psPtr[nNumCommand + i * 3 + 2] = 0xFF;
+								}
+								psPtr = g_lpsMapID + 160;
+								*((INT *)psPtr) = nNumCommand + MAX_UTTERANCE * 3;
+
+								am_vos_mic_disable();
+								bErrorOccurred = !ProgramDataToFlash(nUsedSize);
+//								am_vos_mic_fifo_flush();
+								am_vos_mic_enable();
+								if(bErrorOccurred)
+								{
+										AM_APP_LOG_WARNING("ProgramDataToFlash Fail!!\n");
+										return;
+								}
 								
 								g_hDSpotter = DSpotter_Init_Multi(g_lppbyModel[0], (BYTE **)&g_lpbyModelBuf, 1, k_nMaxTime, g_lpbyMemPool, g_nMemUsage, NULL, 0, &nErr, (BYTE *)&u32LicenseDataBegin);
 								if(g_hDSpotter == NULL)
@@ -210,7 +416,10 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 										return;
 								}
 								
-								AM_APP_LOG_INFO("Train SD model successfully!!\r\n");
+								AM_APP_LOG_INFO("Train command model successfully!!\r\n");
+								AM_APP_LOG_INFO("Run command recognition flow!!\r\n");
+								nUtterance = 0;
+								g_bTrainSDModel = FALSE;
 						}
 						
 						return;
@@ -221,8 +430,7 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		if(result == 0)
 		{
 				int32_t id = DSpotter_GetResultMapID(g_hDSpotter);
-				if(id == 0)
-					AM_APP_LOG_INFO("Command was detected!!\r\n");
+				AM_APP_LOG_INFO("Command %d was detected!!\r\n", id);
 				
 				DSpotter_Reset(g_hDSpotter);
 				
@@ -249,6 +457,17 @@ INT DataFlash_Erase(BYTE *dest, INT nSize)
 		memset(dest + i, 0xFF, k_nFlashPageSize);
 
 	return 0;
+}
+
+void Button_Handler(short sButtonIndex)
+{
+	AM_APP_LOG_INFO("Button %d was clicked!!\r\n", sButtonIndex);
+	
+	if(g_bTrainSDModel || g_bProcessButtonEvent)
+		return;
+	
+	g_sTargetID = sButtonIndex;
+	g_bProcessButtonEvent = TRUE;
 }
 
 #endif // configUSE_Cyberon_Spotter

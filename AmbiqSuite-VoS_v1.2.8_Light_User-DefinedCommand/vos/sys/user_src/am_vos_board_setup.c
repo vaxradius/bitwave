@@ -442,6 +442,11 @@ void am_vos_button_int_register(void)
 #endif // configUSE_MUTE_MIC
 
 #elif defined (AM_PART_APOLLO3) || defined (AM_PART_APOLLO3P)
+#if configUSE_Button
+		am_hal_gpio_interrupt_register(AM_BSP_GPIO_BUTTON0, am_vos_button0_process);
+		am_hal_gpio_interrupt_register(AM_BSP_GPIO_BUTTON1, am_vos_button1_process);
+		am_hal_gpio_interrupt_register(AM_BSP_GPIO_BUTTON2, am_vos_button2_process);
+#else	
 #if configUSE_RTT_RECORDER
     //am_hal_gpio_interrupt_register(AM_BSP_GPIO_BUTTON0, button0_handler);
 #endif // configUSE_RTT_RECORDER
@@ -451,6 +456,7 @@ void am_vos_button_int_register(void)
 #if configUSE_MUTE_MIC
     am_hal_gpio_interrupt_register(AM_BSP_GPIO_BUTTON2, am_vos_mute_mic_process);
 #endif // configUSE_MUTE_MIC
+#endif // configUSE_Button
 #endif // AM_PART_APOLLO2, AM_PART_APOLLO3, AM_PART_APOLLO3P
 }
 
@@ -767,8 +773,8 @@ void PDMInit(void)
         .eLeftGain = AM_HAL_PDM_GAIN_P405DB,
         .eRightGain = AM_HAL_PDM_GAIN_P405DB,
 #elif defined (AM_VOS_DSPOTTER)
-			  .eLeftGain = AM_HAL_PDM_GAIN_P90DB,//AM_HAL_PDM_GAIN_P255DB,
-        .eRightGain = AM_HAL_PDM_GAIN_P90DB,//AM_HAL_PDM_GAIN_P255DB,
+			  .eLeftGain = AM_HAL_PDM_GAIN_P255DB,//AM_HAL_PDM_GAIN_P90DB,//AM_HAL_PDM_GAIN_P255DB,
+        .eRightGain = AM_HAL_PDM_GAIN_P255DB,//AM_HAL_PDM_GAIN_P90DB,//AM_HAL_PDM_GAIN_P255DB,
 #else // AM_VOS_CSPOTTER_CES
         .eLeftGain = AM_HAL_PDM_GAIN_P105DB,
         .eRightGain = AM_HAL_PDM_GAIN_P105DB,

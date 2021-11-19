@@ -112,6 +112,7 @@
 
 #if defined (AM_VOS_CSPOTTER) || defined (AM_VOS_CSPOTTER_CES) || defined (AM_VOS_DSPOTTER)
     #define configUSE_Cyberon_Spotter   1               // Cyberon detection lib
+		#define configUSE_Button   					1               // If it is enabled, masks configUSE_PUSH_TO_TALK and configUSE_MUTE_MIC.
 #else // AM_VOS_CSPOTTER
     #define configUSE_Cyberon_Spotter   0
 #endif // AM_VOS_CSPOTTER

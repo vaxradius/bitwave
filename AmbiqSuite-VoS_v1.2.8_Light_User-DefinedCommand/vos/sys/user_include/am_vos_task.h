@@ -128,4 +128,10 @@ void am_vos_mute_mic_process(void);
 void am_vos_mute_mic_toggle(void);
 #endif // configUSE_MUTE_MIC
 
+#if configUSE_Button
+void am_vos_button0_process(void);
+void am_vos_button1_process(void);
+void am_vos_button2_process(void);
+#endif // configUSE_Button
+
 #endif // AM_VOS_TASK_H

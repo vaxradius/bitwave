@@ -52,6 +52,8 @@
 
 #define k_nFlashPageSize	(4096)
 
+#define MAP_ID_FILE_SIZE	(160 + 2 + (9 * MAX_UTTERANCE + 1)) // Must be 4-byte alignment for programming to flash
+
 extern void *g_hDSpotter;
 
 //*****************************************************************************
@@ -61,5 +63,7 @@ extern void *DSpotterInit(void);
 
 extern int DSpotter_AddSample(void *hDSpotter, short *lpsSample, int nNumSample);
 extern int DSpotter_GetResult(void *hDSpotter);
+
+extern void Button_Handler(short sButtonIndex);
 
 #endif

@@ -1160,6 +1160,44 @@ void am_vos_mute_mic_process(void)
 }
 #endif // configUSE_MUTE_MIC
 
+#if configUSE_Button
+void am_vos_button0_process(void)
+{
+		am_vos_gpio_disable_irq(AM_BSP_GPIO_BUTTON0);
+	
+		if(am_vos_check_button_gpio(AM_BSP_GPIO_BUTTON0))
+    {
+        Button_Handler(0);
+    }
+    
+    am_vos_gpio_enable_irq(AM_BSP_GPIO_BUTTON0);
+}
+
+void am_vos_button1_process(void)
+{
+		am_vos_gpio_disable_irq(AM_BSP_GPIO_BUTTON1);
+	
+		if(am_vos_check_button_gpio(AM_BSP_GPIO_BUTTON1))
+    {
+        Button_Handler(1);
+    }
+		
+    am_vos_gpio_enable_irq(AM_BSP_GPIO_BUTTON1);
+}
+
+void am_vos_button2_process(void)
+{
+		am_vos_gpio_disable_irq(AM_BSP_GPIO_BUTTON2);
+		
+		if(am_vos_check_button_gpio(AM_BSP_GPIO_BUTTON2))
+    {
+        Button_Handler(2);
+    }
+    
+    am_vos_gpio_enable_irq(AM_BSP_GPIO_BUTTON2);
+}
+#endif // configUSE_Button
+
 //*****************************************************************************
 //
 // WOS ISR

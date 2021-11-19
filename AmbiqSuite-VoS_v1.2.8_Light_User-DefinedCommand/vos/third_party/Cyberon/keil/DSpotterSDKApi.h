@@ -64,7 +64,6 @@ DSPDLL_API INT DSpotter_GetNumWord(BYTE *lpbyModel);
 
 DSPDLL_API INT DSpotter_GetMemoryUsage_Multi(BYTE *lpbyCYBase, BYTE *lppbyModel[], INT nNumModel, INT nMaxTime);
 
-
 // Purpose: Set MapID bin to Engine
 // hDSpotter(IN): a handle of the recognizer
 // lpbMapID(IN): The MapID bin.
