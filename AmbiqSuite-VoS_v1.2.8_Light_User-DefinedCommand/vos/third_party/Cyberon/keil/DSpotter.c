@@ -165,13 +165,25 @@ BOOL ProcessButtonEvent()
 		}
 	}
 	
-#if ENABLE_AGC
+#if ENABLE_AGC	
 	if((nErr = DSpotterSDAGC_Enable(g_hDSpotter)) != DSPOTTER_SUCCESS)
 	{
 		AM_APP_LOG_WARNING("DSpotterSDAGC_Enable Fail!!(%d)\n", nErr);
 		return FALSE;
 	}
+	
+	if((nErr = DSpotterSDAGC_SetMaxGain(g_hDSpotter, AGC_MAX_GAIN)) != DSPOTTER_SUCCESS)
+	{
+		AM_APP_LOG_WARNING("DSpotterSDAGC_SetMaxGain Fail!!(%d)\n", nErr);
+		return FALSE;
+	}
 #endif
+	
+	if((nErr = DSpotterSD_SetBackgroundEnergyThreshd(g_hDSpotter, ENERGY_THRESHOLD)) != DSPOTTER_SUCCESS)
+	{
+		AM_APP_LOG_WARNING("DSpotterSD_SetBackgroundEnergyThreshd Fail!!(%d)\n", nErr);
+		return FALSE;
+	}
 	
 	return TRUE;
 }
@@ -245,11 +257,17 @@ void *DSpotterInit(void)
 	if(hDSpotter)
 	{
 #if ENABLE_AGC
-	if((nErr = DSpotterAGC_Enable(hDSpotter)) != DSPOTTER_SUCCESS)
-	{
-		am_app_utils_stdio_printf(2, "DSpotterAGC_Enable Fail(%d)!!\r\n", nErr);
-		return NULL;
-	}
+		if((nErr = DSpotterAGC_Enable(hDSpotter)) != DSPOTTER_SUCCESS)
+		{
+			am_app_utils_stdio_printf(2, "DSpotterAGC_Enable Fail!!(%d)\r\n", nErr);
+			return NULL;
+		}
+		
+		if((nErr = DSpotterAGC_SetMaxGain(hDSpotter, AGC_MAX_GAIN)) != DSPOTTER_SUCCESS)
+		{
+			am_app_utils_stdio_printf(2, "DSpotterAGC_SetMaxGain Fail!!(%d)\n", nErr);
+			return NULL;
+		}
 #endif
 
 		nErr = DSpotter_SetResultMapID_Sep(hDSpotter, (BYTE *)g_lpsMapID);
@@ -270,12 +288,24 @@ void *DSpotterInit(void)
 		}
 		
 #if ENABLE_AGC
-	if((nErr = DSpotterSDAGC_Enable(hDSpotter)) != DSPOTTER_SUCCESS)
-	{
-		am_app_utils_stdio_printf(2, "DSpotterSDAGC_Enable Fail!!\r\n");
-		return NULL;
-	}
+		if((nErr = DSpotterSDAGC_Enable(hDSpotter)) != DSPOTTER_SUCCESS)
+		{
+			am_app_utils_stdio_printf(2, "DSpotterSDAGC_Enable Fail!!(%d)\r\n", nErr);
+			return NULL;
+		}
+		
+		if((nErr = DSpotterSDAGC_SetMaxGain(hDSpotter, AGC_MAX_GAIN)) != DSPOTTER_SUCCESS)
+		{
+			am_app_utils_stdio_printf(2, "DSpotterSDAGC_SetMaxGain Fail!!(%d)\r\n", nErr);
+			return NULL;
+		}
 #endif
+		
+		if((nErr = DSpotterSD_SetBackgroundEnergyThreshd(hDSpotter, ENERGY_THRESHOLD)) != DSPOTTER_SUCCESS)
+		{
+			am_app_utils_stdio_printf(2, "DSpotterSD_SetBackgroundEnergyThreshd Fail!!(%d)\n", nErr);
+			return NULL;
+		}
 		
 		// Initialize map id
 		memset(g_lpsMapID, 0xFF, MAP_ID_FILE_SIZE << 1);
@@ -433,6 +463,13 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 								if((nErr = DSpotterAGC_Enable(g_hDSpotter)) != DSPOTTER_SUCCESS)
 								{
 									AM_APP_LOG_WARNING("DSpotterAGC_Enable Fail(%d)!!\n", nErr);
+									bErrorOccurred = TRUE;
+									return;
+								}
+								
+								if((nErr = DSpotterAGC_SetMaxGain(g_hDSpotter, AGC_MAX_GAIN)) != DSPOTTER_SUCCESS)
+								{
+									AM_APP_LOG_WARNING("DSpotterAGC_SetMaxGain Fail!!(%d)\n", nErr);
 									bErrorOccurred = TRUE;
 									return;
 								}

@@ -773,8 +773,8 @@ void PDMInit(void)
         .eLeftGain = AM_HAL_PDM_GAIN_P405DB,
         .eRightGain = AM_HAL_PDM_GAIN_P405DB,
 #elif defined (AM_VOS_DSPOTTER)
-			  .eLeftGain = AM_HAL_PDM_GAIN_P90DB,//AM_HAL_PDM_GAIN_P255DB,
-        .eRightGain = AM_HAL_PDM_GAIN_P90DB,//AM_HAL_PDM_GAIN_P255DB,
+			  .eLeftGain = AM_HAL_PDM_GAIN_P180DB,//AM_HAL_PDM_GAIN_P90DB,//AM_HAL_PDM_GAIN_P255DB,
+        .eRightGain = AM_HAL_PDM_GAIN_P180DB,//AM_HAL_PDM_GAIN_P90DB,//AM_HAL_PDM_GAIN_P255DB,
 #else // AM_VOS_CSPOTTER_CES
         .eLeftGain = AM_HAL_PDM_GAIN_P105DB,
         .eRightGain = AM_HAL_PDM_GAIN_P105DB,
