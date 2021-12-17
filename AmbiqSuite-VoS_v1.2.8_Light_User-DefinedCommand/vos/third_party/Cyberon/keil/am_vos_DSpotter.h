@@ -54,6 +54,8 @@
 
 #define MAP_ID_FILE_SIZE	(160 + 2 + (9 * MAX_UTTERANCE + 1)) // Must be 4-byte alignment for programming to flash
 
+#define ENABLE_AGC 				(1)
+
 extern void *g_hDSpotter;
 
 //*****************************************************************************

@@ -165,6 +165,14 @@ BOOL ProcessButtonEvent()
 		}
 	}
 	
+#if ENABLE_AGC
+	if((nErr = DSpotterSDAGC_Enable(g_hDSpotter)) != DSPOTTER_SUCCESS)
+	{
+		AM_APP_LOG_WARNING("DSpotterSDAGC_Enable Fail!!(%d)\n", nErr);
+		return FALSE;
+	}
+#endif
+	
 	return TRUE;
 }
 
@@ -236,6 +244,14 @@ void *DSpotterInit(void)
 	hDSpotter = DSpotter_Init_Multi(g_lppbyModel[0], (BYTE **)&g_lpbyModelBuf, 1, k_nMaxTime, g_lpbyMemPool, g_nMemUsage, NULL, 0, &nErr, (BYTE *)&u32LicenseDataBegin);
 	if(hDSpotter)
 	{
+#if ENABLE_AGC
+	if((nErr = DSpotterAGC_Enable(hDSpotter)) != DSPOTTER_SUCCESS)
+	{
+		am_app_utils_stdio_printf(2, "DSpotterAGC_Enable Fail(%d)!!\r\n", nErr);
+		return NULL;
+	}
+#endif
+
 		nErr = DSpotter_SetResultMapID_Sep(hDSpotter, (BYTE *)g_lpsMapID);
 		if(nErr != DSPOTTER_SUCCESS){
 				am_app_utils_stdio_printf(2, "DSpotter_SetResultMapID_Sep Fail!!(%d)\r\n", nErr);
@@ -252,6 +268,14 @@ void *DSpotterInit(void)
 			am_app_utils_stdio_printf(2, "g_hDSpotter == NULL\r\n");
 			return NULL;
 		}
+		
+#if ENABLE_AGC
+	if((nErr = DSpotterSDAGC_Enable(hDSpotter)) != DSPOTTER_SUCCESS)
+	{
+		am_app_utils_stdio_printf(2, "DSpotterSDAGC_Enable Fail!!\r\n");
+		return NULL;
+	}
+#endif
 		
 		// Initialize map id
 		memset(g_lpsMapID, 0xFF, MAP_ID_FILE_SIZE << 1);
@@ -303,7 +327,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		{
 			am_vos_mic_disable();
 			bErrorOccurred = !ProcessButtonEvent();
-//			am_vos_mic_fifo_flush();
 			am_vos_mic_enable();
 			if(bErrorOccurred)
 			{
@@ -356,7 +379,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 				
 						am_vos_mic_disable();
 						nErr = DSpotterSD_TrainWord(g_hDSpotter, (char *)g_lpbyModelBuf, g_nModelBufSize, &nUsedSize);
-//						am_vos_mic_fifo_flush();
 						am_vos_mic_enable();
 						if(nErr != DSPOTTER_SUCCESS)
 						{
@@ -392,7 +414,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 
 								am_vos_mic_disable();
 								bErrorOccurred = !ProgramDataToFlash(nUsedSize);
-//								am_vos_mic_fifo_flush();
 								am_vos_mic_enable();
 								if(bErrorOccurred)
 								{
@@ -407,6 +428,15 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 										bErrorOccurred = TRUE;
 										return;
 								}
+								
+#if ENABLE_AGC
+								if((nErr = DSpotterAGC_Enable(g_hDSpotter)) != DSPOTTER_SUCCESS)
+								{
+									AM_APP_LOG_WARNING("DSpotterAGC_Enable Fail(%d)!!\n", nErr);
+									bErrorOccurred = TRUE;
+									return;
+								}
+#endif
 								
 								nErr = DSpotter_SetResultMapID_Sep(g_hDSpotter, (BYTE *)g_lpsMapID);
 								if(nErr != DSPOTTER_SUCCESS)
