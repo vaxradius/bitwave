@@ -339,7 +339,7 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		static BOOL bStartTraining = FALSE;
 		static BOOL bErrorOccurred = FALSE;
 		static INT nUtterance = 0;
-		static INT nSkipFrame = SKIP_FRAME;
+		static INT nSkipFrame = 0;
 		INT nUsedSize;
 		INT nErr;
 		SHORT *psPtr;
@@ -358,7 +358,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		{
 			am_vos_mic_disable();
 			bErrorOccurred = !ProcessButtonEvent();
-			nSkipFrame = SKIP_FRAME;
 			am_vos_mic_enable();
 			if(bErrorOccurred)
 			{
@@ -370,12 +369,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 			g_bTrainSDModel = TRUE;
 			g_bProcessButtonEvent = FALSE;
 			
-			return;
-		}
-		
-		if(nSkipFrame > 0)
-		{
-			nSkipFrame--;
 			return;
 		}
 	
@@ -392,6 +385,13 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 						}
 						
 						bStartTraining = TRUE;
+						nSkipFrame = SKIP_FRAME;
+				}
+				
+				if(nSkipFrame > 0)
+				{
+						nSkipFrame--;
+						return;
 				}
 				
 				nErr = DSpotterSD_AddSample(g_hDSpotter, (short *)pi16InputBuffer, i16InputLength);
@@ -417,7 +417,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 				
 						am_vos_mic_disable();
 						nErr = DSpotterSD_TrainWord(g_hDSpotter, (char *)g_lpbyModelBuf, g_nModelBufSize, &nUsedSize);
-						nSkipFrame = SKIP_FRAME;
 						am_vos_mic_enable();
 						if(nErr != DSPOTTER_SUCCESS)
 						{
@@ -453,7 +452,6 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 
 								am_vos_mic_disable();
 								bErrorOccurred = !ProgramDataToFlash(nUsedSize);
-								nSkipFrame = SKIP_FRAME;
 								am_vos_mic_enable();
 								if(bErrorOccurred)
 								{
