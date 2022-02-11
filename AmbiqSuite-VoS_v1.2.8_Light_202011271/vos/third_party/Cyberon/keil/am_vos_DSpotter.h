@@ -60,6 +60,8 @@
 
 #define SEPARATION_MODE		(1)
 
+#define ENERGY_THRESHOLD	(50)
+
 extern void *g_hDSpotter;
 
 //*****************************************************************************

@@ -108,6 +108,11 @@ void *DSpotterInit(void)
 		return NULL;
 	}
 #endif
+#if ENERGY_THRESHOLD > 0
+	am_app_utils_stdio_printf(2, "Default energy threshold = %d\r\n", DSpotter_GetEnergyTH(hDSpotter));
+	DSpotter_SetEnergyTH(hDSpotter, ENERGY_THRESHOLD);
+	am_app_utils_stdio_printf(2, "New energy threshold = %d\r\n", DSpotter_GetEnergyTH(hDSpotter));
+#endif
 	/** Start recognize */	
 	am_app_utils_stdio_printf(2, "[Wakeword detection]\r\n");
 
@@ -158,6 +163,8 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 		int32_t result = DSpotter_AddSample(g_hDSpotter, (short *)pi16InputBuffer, i16InputLength);
 		if(result == 0)
 		{
+				int32_t energy = DSpotter_GetCmdEnergy(g_hDSpotter);
+				AM_APP_LOG_INFO("Command energy: %d\r\n", energy);
 				int32_t id = DSpotter_GetResultMapID(g_hDSpotter);
 				if(nStatus == 0)
 				{
@@ -185,6 +192,9 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 							am_app_utils_stdio_printf(2, "Fail to enable AGC\r\n");
 							return;
 						}
+#endif
+#if ENERGY_THRESHOLD > 0
+						DSpotter_SetEnergyTH(g_hDSpotter, ENERGY_THRESHOLD);
 #endif
 #if SEAMLESS_MODE
 						#if BURST_MODE
@@ -241,6 +251,9 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 							return;
 						}
 #endif
+#if ENERGY_THRESHOLD > 0
+						DSpotter_SetEnergyTH(g_hDSpotter, ENERGY_THRESHOLD);
+#endif
 				}
 				
 				am_vos_reset_detected_flag();
@@ -268,6 +281,9 @@ void am_vos_engine_process(int16_t *pi16InputBuffer, int16_t i16InputLength)
 							am_app_utils_stdio_printf(2, "Fail to enable AGC\r\n");
 							return;
 						}
+#endif
+#if ENERGY_THRESHOLD > 0
+						DSpotter_SetEnergyTH(g_hDSpotter, ENERGY_THRESHOLD);
 #endif
 				}
 		}
