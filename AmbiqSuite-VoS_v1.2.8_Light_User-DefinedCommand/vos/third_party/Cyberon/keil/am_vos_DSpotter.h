@@ -60,7 +60,11 @@
 
 #define ENERGY_THRESHOLD	(1200)
 
-#define SKIP_FRAME				(1)				
+#define SKIP_FRAME				(1)
+
+#define FLASH_PAGE_INDEX	(1)
+
+#define FLASH_PAGE_NUM		(1)
 
 extern void *g_hDSpotter;
 

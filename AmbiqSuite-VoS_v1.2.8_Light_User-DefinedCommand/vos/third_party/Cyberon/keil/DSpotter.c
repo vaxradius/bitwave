@@ -25,7 +25,7 @@ BYTE *g_lppbyModel[MODEL_NUM] = {0};
 SHORT g_lpsMapID[MAP_ID_FILE_SIZE] = {0};
 extern uint32_t u32CMDDataBegin;
 extern uint32_t u32LicenseDataBegin;
-uint32_t g_ui32PrgmAddr = (AM_HAL_FLASH_INSTANCE_SIZE + (2 * AM_HAL_FLASH_PAGE_SIZE));
+uint32_t g_ui32PrgmAddr = (AM_HAL_FLASH_INSTANCE_SIZE + (FLASH_PAGE_INDEX * AM_HAL_FLASH_PAGE_SIZE));
 volatile BOOL g_bTrainSDModel = TRUE;
 volatile BOOL g_bProcessButtonEvent = FALSE;
 SHORT g_sTargetID = 0;
@@ -37,10 +37,22 @@ BOOL ProgramDataToFlash(INT nModelSize)
 	
 	do
 	{
-		nErr = am_hal_flash_mass_erase(AM_HAL_FLASH_PROGRAM_KEY, 1);
+		if((MAP_ID_FILE_SIZE << 1) + nModelSize > FLASH_PAGE_NUM * AM_HAL_FLASH_PAGE_SIZE)
+		{
+				AM_APP_LOG_WARNING("Flash buffer isn't big enough!!\n");
+				bErrorOccurred = TRUE;
+				break;			
+		}
+		
+		for(int i = 0; i < FLASH_PAGE_NUM; i++)
+		{
+				if((nErr = am_hal_flash_page_erase(AM_HAL_FLASH_PROGRAM_KEY, 1, FLASH_PAGE_INDEX + i)) != 0)
+					break;
+		}
+
 		if(nErr)
 		{
-				AM_APP_LOG_WARNING("am_hal_flash_mass_erase Fail!!(%d)\n", nErr);
+				AM_APP_LOG_WARNING("am_hal_flash_page_erase Fail!!(%d)\n", nErr);
 				bErrorOccurred = TRUE;
 				break;
 		}
@@ -81,7 +93,10 @@ BOOL ProgramDataToFlash(INT nModelSize)
 	
 	if(bErrorOccurred)
 	{
-		am_hal_flash_mass_erase(AM_HAL_FLASH_PROGRAM_KEY, 1);
+		for(int i = 0; i < FLASH_PAGE_NUM; i++)
+		{
+				nErr = am_hal_flash_page_erase(AM_HAL_FLASH_PROGRAM_KEY, 1, FLASH_PAGE_INDEX + i);
+		}
 	}
 	
 	return !bErrorOccurred;
