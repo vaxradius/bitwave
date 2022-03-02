@@ -37,7 +37,7 @@ BOOL ProgramDataToFlash(INT nModelSize)
 	
 	do
 	{
-		if((MAP_ID_FILE_SIZE << 1) + nModelSize > FLASH_PAGE_NUM * AM_HAL_FLASH_PAGE_SIZE)
+		if((sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) + (MAP_ID_FILE_SIZE << 1) + nModelSize > FLASH_PAGE_NUM * AM_HAL_FLASH_PAGE_SIZE)
 		{
 				AM_APP_LOG_WARNING("Flash buffer isn't big enough!!\n");
 				bErrorOccurred = TRUE;
@@ -59,8 +59,8 @@ BOOL ProgramDataToFlash(INT nModelSize)
 		
 		if(nModelSize <= 0)
 			break;
-
-		nErr = am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY, (uint32_t *)g_lpsMapID, (uint32_t *)g_ui32PrgmAddr, MAP_ID_FILE_SIZE >> 1);
+		
+		nErr = am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY, (uint32_t *)&u32CMDDataBegin, (uint32_t *)g_ui32PrgmAddr, (sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) >> 2);
 		if(nErr)
 		{
 				AM_APP_LOG_WARNING("am_hal_flash_program_main Fail!!(%d)\n", nErr);
@@ -68,7 +68,7 @@ BOOL ProgramDataToFlash(INT nModelSize)
 				break;
 		}
 
-		nErr = am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY, (uint32_t *)g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + (MAP_ID_FILE_SIZE >> 1), nModelSize >> 2);
+		nErr = am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY, (uint32_t *)g_lpsMapID, (uint32_t *)g_ui32PrgmAddr + ((sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) >> 2), MAP_ID_FILE_SIZE >> 1);
 		if(nErr)
 		{
 				AM_APP_LOG_WARNING("am_hal_flash_program_main Fail!!(%d)\n", nErr);
@@ -76,14 +76,29 @@ BOOL ProgramDataToFlash(INT nModelSize)
 				break;
 		}
 
-		if(memcmp(g_lpsMapID, (uint32_t *)g_ui32PrgmAddr, MAP_ID_FILE_SIZE << 1) != 0)
+		nErr = am_hal_flash_program_main(AM_HAL_FLASH_PROGRAM_KEY, (uint32_t *)g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + ((sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) >> 2) + (MAP_ID_FILE_SIZE >> 1), nModelSize >> 2);
+		if(nErr)
+		{
+				AM_APP_LOG_WARNING("am_hal_flash_program_main Fail!!(%d)\n", nErr);
+				bErrorOccurred = TRUE;
+				break;
+		}
+
+		if(memcmp((uint32_t *)&u32CMDDataBegin, (uint32_t *)g_ui32PrgmAddr, sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) != 0)
+		{
+				AM_APP_LOG_WARNING("memcmp Fail!!\n");
+				bErrorOccurred = TRUE;
+				break;
+		}
+		
+		if(memcmp(g_lpsMapID, (uint32_t *)g_ui32PrgmAddr + ((sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) >> 2), MAP_ID_FILE_SIZE << 1) != 0)
 		{
 				AM_APP_LOG_WARNING("memcmp Fail!!\n");
 				bErrorOccurred = TRUE;
 				break;
 		}
 
-		if(memcmp(g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + (MAP_ID_FILE_SIZE >> 1), nModelSize) != 0)
+		if(memcmp(g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + ((sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) >> 2) + (MAP_ID_FILE_SIZE >> 1), nModelSize) != 0)
 		{
 				AM_APP_LOG_WARNING("memcmp Fail!!\n");
 				bErrorOccurred = TRUE;
@@ -228,7 +243,7 @@ void *DSpotterInit(void)
 	
 	/** Initialize VR engine */
 	// Unpack command data
-	if(UnpackBin((BYTE *)&u32CMDDataBegin, g_lppbyModel, MODEL_NUM) < MODEL_NUM){
+	if(UnpackBin((BYTE *)&u32CMDDataBegin + (sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin), g_lppbyModel, MODEL_NUM) < MODEL_NUM){
 		am_app_utils_stdio_printf(2, "Invalid bin\r\n");
 		return NULL;
 	}
@@ -266,8 +281,16 @@ void *DSpotterInit(void)
 	g_lpbyModelBuf = pvPortMalloc(nMemUsage);
 	
 	// Try loading model from flash
-	memcpy(g_lpsMapID, (uint32_t *)g_ui32PrgmAddr, MAP_ID_FILE_SIZE << 1);
-	memcpy(g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + (MAP_ID_FILE_SIZE >> 1), k_nFlashPageSize);
+	memcpy(g_lpsMapID, (uint32_t *)g_ui32PrgmAddr + ((sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) / sizeof(uint32_t)), MAP_ID_FILE_SIZE << 1);
+	memcpy(g_lpbyModelBuf, (uint32_t *)g_ui32PrgmAddr + ((sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) / sizeof(uint32_t)) + (MAP_ID_FILE_SIZE >> 1), k_nFlashPageSize);
+	if(memcmp(g_lpbyModelBuf, "CYHD", 4) == 0)
+	{
+		if(memcmp((uint32_t *)&u32CMDDataBegin, (uint32_t *)g_ui32PrgmAddr, sizeof(uint32_t) + *(uint32_t *)&u32CMDDataBegin) == 0)
+		{
+			memcpy(&g_lpbyModelBuf[28], &g_lppbyModel[0][28], 4);
+		}
+	}
+
 	hDSpotter = DSpotter_Init_Multi(g_lppbyModel[0], (BYTE **)&g_lpbyModelBuf, 1, k_nMaxTime, g_lpbyMemPool, g_nMemUsage, NULL, 0, &nErr, (BYTE *)&u32LicenseDataBegin);
 	if(hDSpotter)
 	{
