@@ -5,7 +5,7 @@
     EXPORT  u32CMDDataEnd
 
 u32CMDDataBegin
-	INCBIN .\UCLEAR_EngCmd_20210709_pack_WithTriAndMapID.bin.BITwave
+	INCBIN .\UCLEAR_EngCmd_20210709_pack_WithTriAndMapID.bin
 u32CMDDataEnd
 
 	END
