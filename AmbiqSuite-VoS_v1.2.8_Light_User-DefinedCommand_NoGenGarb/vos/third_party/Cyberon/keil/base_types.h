@@ -10,11 +10,12 @@
 #ifndef	__BASE_TYPES_H
 #define	__BASE_TYPES_H
 
+//#define _CEVA_SIMULATE_
+//#define _DIM_40_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-//#define _CEVA_SIMULATE_
 
 #if defined(_WIN32)
 

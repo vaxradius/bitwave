@@ -22,6 +22,13 @@
 /************************************************************************/
 
 /************************************************************************/
+// FFT type                                                                
+/************************************************************************/
+#define DSPOTTER_FFTTYPE_NOSET					(0)
+#define DSPOTTER_FFTTYPE_COMPLEX				(1)
+#define DSPOTTER_FFTTYPE_REAL					(2)
+
+/************************************************************************/
 // Error code                                                                  
 /************************************************************************/
 
@@ -55,6 +62,8 @@
 #define DSPOTTER_ERR_NoisyEnvironment			( DSPOTTER_ERR_SDKError - 503 )
 #define DSPOTTER_ERR_VoiceTooShort		        ( DSPOTTER_ERR_SDKError - 504 )
 #define DSPOTTER_ERR_VoiceTooLong		        ( DSPOTTER_ERR_SDKError - 505 )
+#define DSPOTTER_ERR_IDExists					( DSPOTTER_ERR_SDKError - 506 )
+#define DSPOTTER_ERR_UttrTooMany                ( DSPOTTER_ERR_SDKError - 507 )
 
 #define DSPOTTER_ERR_AGCError					( DSPOTTER_ERR_SDKError - 605 )
 

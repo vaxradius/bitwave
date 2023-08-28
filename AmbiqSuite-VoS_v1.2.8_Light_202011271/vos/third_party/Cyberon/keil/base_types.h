@@ -10,29 +10,61 @@
 #ifndef	__BASE_TYPES_H
 #define	__BASE_TYPES_H
 
+//#define _CEVA_SIMULATE_
+//#define _DIM_40_
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #if defined(_WIN32)
 
-	#include <windows.h>
 
+#ifdef _CEVA_SIMULATE_
+	typedef signed short CHAR;
+	typedef unsigned short BYTE;
+	typedef signed short INT8;
+	typedef unsigned short UINT8;
+	typedef signed short SHORT;
+	typedef unsigned short WORD;
+	typedef unsigned short USHORT;
+	typedef signed long LONG;
+	typedef unsigned int DWORD;
+	typedef unsigned long ULONG;
+	typedef signed int INT;
+	typedef unsigned int UINT;
+	typedef int BOOL;
+	typedef void VOID;
+	typedef unsigned short WCHAR;	/*typedef wchar_t WCHAR;*/
+	typedef float FLOAT;
+#else
+	#include <windows.h>
 	typedef signed char INT8;
 	typedef unsigned char UINT8;
 	typedef unsigned short USHORT;
 	typedef unsigned int UINT;
 	typedef unsigned long ULONG;
+#endif
+
+	
 #if (_MSC_VER < 1400)
 	typedef unsigned short WCHAR;
 #endif
 
 #else
 
+#ifdef _CEVA_SIMULATE_
+	typedef signed short CHAR;
+	typedef unsigned short BYTE;
+	typedef signed short INT8;
+	typedef unsigned short UINT8;
+#else
 	typedef signed char CHAR;
 	typedef unsigned char BYTE;
 	typedef signed char INT8;
 	typedef unsigned char UINT8;
+#endif
+
 	typedef signed short SHORT;
 	typedef unsigned short WORD;
 	typedef unsigned short USHORT;
@@ -103,10 +135,12 @@
 #define SAFE_FREE(a)	if ( (a) != NULL ) {free(a); (a) = NULL;}
 #endif
 
-//#if !defined(_WIN32)
+#if !defined(_WIN32)
 //#include "SubName.h"
 //#include "License_SubName.h"
-//#endif
+#endif
+
+//#include "DMemory.h"
 
 #ifndef INLINE
 #if defined ( _WIN32 )

@@ -9,6 +9,8 @@ extern "C"{
 
 INT DataFlash_Write(BYTE *dest, BYTE *src, INT nSize);
 INT DataFlash_Erase(BYTE *dest, INT nSize);
+INT DataFlash_Write_ExactSize(BYTE *dest, BYTE *src, INT nSize);
+INT DataFlash_Erase_ExactSize(BYTE *dest, INT nSize);
 
 #ifdef __cplusplus
 }

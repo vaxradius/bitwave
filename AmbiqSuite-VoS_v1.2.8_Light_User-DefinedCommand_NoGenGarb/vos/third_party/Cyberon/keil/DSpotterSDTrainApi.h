@@ -86,17 +86,17 @@ DSPDLL_API INT DSpotterSDAGC_Disable(HANDLE hDSpotter);
 
 // Purpose: Set the upper bound of AGC Gain (and also the current AGC Gain)
 // hDSpotter(IN): a handle of the recognizer
-// fMaxGain(IN): The upper bound of AGC gain; Default is set to 32
+// nMaxGain(IN): The upper bound of AGC gain; Default is set to 32
 // Return: Success or error code
-// Note: 1 <= fMaxGain <= 32
-DSPDLL_API INT DSpotterSDAGC_SetMaxGain(HANDLE hDSpotter, FLOAT fMaxGain);
+// Note: 1 <= nMaxGain <= 128
+DSPDLL_API INT DSpotterSDAGC_SetMaxGain(HANDLE hDSpotter, INT nMaxGain);
 
 // Purpose: Set threshholds to trigger AGC Gain increasing.
 // hDSpotter(IN): a handle of the recognizer
-// sLowerThrd(IN): AGC Gain will increasing if (current peak of frame)*(AGC Gain) < sLowerThrd; Default is set to 5000
+// nLowerThrd(IN): AGC Gain will increasing if (current peak of frame)*(AGC Gain) < nLowerThrd; Default is set to 5000
 // Return: Success or error code
-// Note: 0 <= sLowerThrd <= 10000
-DSPDLL_API INT DSpotterSDAGC_SetIncGainThrd(HANDLE hDSpotter, SHORT sLowerThrd);
+// Note: 0 <= nLowerThrd <= 10000
+DSPDLL_API INT DSpotterSDAGC_SetIncGainThrd(HANDLE hDSpotter, INT nLowerThrd);
 
 // Purpose: Callback to get data after AGC.
 // lpsOutputSample: Samples after AGC.
